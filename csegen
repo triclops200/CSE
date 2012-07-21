@@ -9,6 +9,7 @@ headers = "
 #include <iostream>
 #include <string>
 #include <map>
+#include <fstream>
 using namespace std;
 
 
@@ -41,7 +42,7 @@ map<string,string> resolveKeys(char* KeyString) {
     KeyMap[Key] = Value;
     return KeyMap;
 }
-
+string execDir=\"#{File.dirname(ARGV[0])}\";
 "
 source = ""
 source +=headers+"\n"
