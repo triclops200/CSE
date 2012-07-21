@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby 
 require "fileutils"
 @tmpdir = "/tmp/csedir"
 def openfile_p fname,mode
@@ -50,7 +51,7 @@ if File.exists?(@tmpdir+fname+".md5")
 	res = `md5sum -c #{@tmpdir+fname+".md5"} 2> /dev/null`
 	res = res.split(": ")[1]
 	if res.strip=="OK"
-		abort(@tmpdir+fname+".e")
+		abort(`#{@tmpdir+ARGV[0]+".e"} #{ARGV[1]}`)
 	end
 else
 	FileUtils.mkdir_p(@tmpdir+File.dirname(fname))
@@ -121,7 +122,7 @@ f.close
 errmsg = `g++ -O2 #{@tmpdir+ARGV[0]+".cpp"} -o #{@tmpdir+ARGV[0]+".e"} 2>&1` 
 if $? == 0
 	t =`md5sum #{fname} > #{@tmpdir+fname+".md5"}`
-	puts "F#{@tmpdir+ARGV[0]+".e"}"
+		abort(`#{@tmpdir+ARGV[0]+".e"} #{ARGV[1]}`)
 else
 	puts "E#{errmsg}"
 end

@@ -10,3 +10,13 @@
 
 #include "apr_strings.h"
 
+static int cse_handler(request_rec* r){
+	if(!r->handler || strcmp(r->handler,"cse"))
+		return DECLINED;
+	char * command = NULL;
+
+	command = asprintf(&null,"csegen %s %s",r->filename,r->args);
+	ap_set_content_type(r,"text/plain");
+	ap_rputs(command);
+	return OK;
+}
