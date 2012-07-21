@@ -8,16 +8,17 @@
 #include "util_script.h"
 #include "http_connection.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include "apr_strings.h"
 static int cse_handler(request_rec* r){
-	if(!r->handler || !strcasecmp(r->handler,"cse"))
+	if(!r->handler || strcmp(r->handler,"cse"))
 		return DECLINED;
-	char * command = NULL;
+	char*  command;
 
-    if(strcmp("(null)",r->args)){
-		asprintf(&command,"csegen %s '\"%s\"'",r->filename,r->args); 
+    if(r->args==NULL){
+		asprintf(&command,"csegen %s '\"%s\"' 2>&1",r->filename,r->args); 
 	}else{
-		asprintf(&command,"csegen %s \"\"",r->filename,r->args); 
+		asprintf(&command,"csegen %s \"\" 2>&1",r->filename,r->args); 
 	}
 	if (r->method_number != M_GET) {
     /* We only accept GET and HEAD requests.
@@ -32,19 +33,19 @@ static int cse_handler(request_rec* r){
 	char * str;
 	int maxsz = 32;
 	int len = 0;
-	str = malloc(sizeof(char));
-	while(!feof(cmd)){
-		str[len++]=fgetc(cmd);
-		if(len == maxsz){
-			str=realloc(str,sizeof(char)*maxsz*2);
+	fprintf(stderr,"Here\n");
+	str = malloc(sizeof(char)*maxsz);
+	char b[1];
+	while(fread(b,1,1,cmd)){
+		str[len++]=b[0];
+		if(len >= maxsz-1){
+			str=(char*)realloc(str,sizeof(char)*maxsz*2);
 			maxsz *=2;
 		}
 	}
 	str[len]=0;
-	ap_set_content_type(r , "text/html");
 	ap_rputs(str,r);
 	free(str);
-	ap_set_content_type(r , "text/html");
 	return OK;
 }
 static void register_hooks(apr_pool_t* pool)

@@ -45,8 +45,7 @@ map<string,string> resolveKeys(char* KeyString) {
 "
 source = ""
 source +=headers+"\n"
-source += "int call(map<string,string> Request){
-cout<< \"Content-Type: text/html\"<<endl;"
+source += "int call(map<string,string> Request){"
 fname =  ARGV[0]
 if File.exists?(@tmpdir+fname+".md5")
 	res = `md5sum -c #{@tmpdir+fname+".md5"} 2> /dev/null`
