@@ -1,14 +1,60 @@
+require "fileutils"
+@tmpdir = "/tmp/csedir"
+def openfile_p fname,mode
+	FileUtils.mkdir_p(@tmpdir+File.dirname(fname))
+	return File.open(@tmpdir+fname,mode)
+end
 headers = "
-#ifndef _CALL_H_
-#define _CALL_H_
 #include <iostream>
-#include \"helper.h\"
+#include <string>
+#include <map>
 using namespace std;
+
+
+map<string,string> resolveKeys(char* KeyString) {
+    int P = 0;
+    map<string,string> KeyMap;
+    string Key = \"\";
+    string Value = \"\";
+    bool Mode = 1; // 0 = key, 1 = value
+    while(KeyString[P]) {
+        switch(KeyString[P]) {
+        case '&':
+            KeyMap[Key] = Value;
+            Key = \"\";
+            Value = \"\";
+            Mode = 1;
+            break;
+        case '=':
+            Mode = 0;
+            break;
+        default:
+            if(Mode)
+                Key += KeyString[P];
+            else
+                Value += KeyString[P];
+        break;
+        }
+        P++;
+    }
+    KeyMap[Key] = Value;
+    return KeyMap;
+}
+
 "
 source = ""
 source +=headers+"\n"
-source += "int call(Map Request){"
+source += "int call(map<string,string> Request){"
 fname =  ARGV[0]
+if File.exists?(@tmpdir+fname+".md5")
+	res = `md5sum -c #{@tmpdir+fname+".md5"} 2> /dev/null`
+	res = res.split(": ")[1]
+	if res.strip=="OK"
+		abort(@tmpdir+fname+".e")
+	end
+else
+	FileUtils.mkdir_p(@tmpdir+File.dirname(fname))
+end
 contents = File.open(fname,"rb").read
 sections = contents.split("<%");
 msections = []
@@ -59,6 +105,23 @@ msections.each do
 end	
 
 source += "}
-#endif
+
+int main(int argc, char**argv){
+	if(argc==2)
+	call(resolveKeys(argv[1]));	
+	else
+	call(resolveKeys(\"\"));
+}
+
 "
-puts source
+
+f=openfile_p(ARGV[0]+".cpp","w")
+f.puts(source)
+f.close
+errmsg = `g++ -O2 #{@tmpdir+ARGV[0]+".cpp"} -o #{@tmpdir+ARGV[0]+".e"} 2>&1` 
+if $? == 0
+	t =`md5sum #{fname} > #{@tmpdir+fname+".md5"}`
+	puts "F#{@tmpdir+ARGV[0]+".e"}"
+else
+	puts "E#{errmsg}"
+end
