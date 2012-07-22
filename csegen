@@ -111,7 +111,7 @@ end
 i = firsttype;
 v = 1
 c = 0
-xfiles=nil
+xfiles=[]
 msections.each do
 	begin
 		if i == -1
@@ -119,7 +119,9 @@ msections.each do
 			if cppsections[c][0]=='='
 				val = "cout<<"+cppsections[c][1..-1]+";\n"
 			elsif cppsections[c][0]=='@'
-				xfiles = cppsections[c][1..-1].strip.gsub(" ","").gsub("\n","").gsub("	","").split(",")
+				 cppsections[c][1..-1].strip.gsub(" ","").gsub("\n","").gsub("	","").split(",").each do |tem|
+				 	xfiles << tem
+				 end
 			else
 				val = cppsections[c]
 			end
@@ -147,16 +149,25 @@ int main(int argc, char**argv){
 }
 
 "
+uheaders = "//user includes\n" 
+xfiles.uniq!
+if xfiles!= [] 
+	xfiles.each do |te|
+		if File.extname(te) == ".h" || File.extname(te) == ".hpp"
+			uheaders += "#include \"#{te}\"\n"
+		end
+	end
+end
+uheaders += "//end user includes \n\n"
+headers = uheaders + headers
 source = headers + source
 f=openfile_p(ARGV[0]+".cpp","w")
 f.puts(source)
 f.close
 wd = (File.dirname(ARGV[0]));
-if xfiles
+if xfiles != []
 FileUtils.cd(wd)
 FileUtils.cp(xfiles,@tmpdir+wd)
-else
-xfiles=[""]
 end
 gen = false
 if old?(ARGV[0])
