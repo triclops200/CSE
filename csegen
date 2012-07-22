@@ -72,14 +72,18 @@ string execDir=\"#{File.dirname(ARGV[0])}\";
 source = ""
 source += "int call(map<string,string> Request){"
 fname =  ARGV[0]
-if File.exists?(@tmpdir+fname+".md5")
-	res = `md5sum -c #{@tmpdir+fname+".md5"} 2> /dev/null`
+def old?(finame)
+if File.exists?(@tmpdir+finame+".md5")
+	res = `md5sum -c #{@tmpdir+finame+".md5"} 2> /dev/null`
 	res = res.split(": ")[1]
 	if res.strip=="OK"
-		abort(`#{@tmpdir+ARGV[0]+".e"} #{ARGV[1]}`)
+		return false
 	end
+	return true
 else
-	FileUtils.mkdir_p(@tmpdir+File.dirname(fname))
+	FileUtils.mkdir_p(@tmpdir+File.dirname(finame))
+	return true
+end
 end
 contents = File.open(fname,"rb").read
 sections = contents.split("<%");
@@ -107,12 +111,15 @@ end
 i = firsttype;
 v = 1
 c = 0
+xfiles=nil
 msections.each do
 	begin
 		if i == -1
 			val = ""
 			if cppsections[c][0]=='='
 				val = "cout<<"+cppsections[c][1..-1]+";\n"
+			elsif cppsections[c][0]=='@'
+				xfiles = cppsections[c][1..-1].strip.gsub(" ","").gsub("\n","").gsub("	","").split(",")
 			else
 				val = cppsections[c]
 			end
@@ -144,10 +151,35 @@ source = headers + source
 f=openfile_p(ARGV[0]+".cpp","w")
 f.puts(source)
 f.close
-errmsg = `g++ -O2 #{@tmpdir+ARGV[0]+".cpp"} -o #{@tmpdir+ARGV[0]+".e"} 2>&1` 
+wd = (File.dirname(ARGV[0]));
+if xfiles
+FileUtils.cd(wd)
+FileUtils.cp(xfiles,@tmpdir+wd)
+else
+xfiles=[""]
+end
+gen = false
+if old?(ARGV[0])
+	gen = true
+end
+xfiles.each do |fnm|
+	if fnm!=""
+		if old?(fnm)
+			gen=true
+		end
+	end
+end
+if gen
+	errmsg = `g++ -O2 #{@tmpdir+ARGV[0]+".cpp"} -I#{@tmpdir+wd} #{xfiles.join" "} -o #{@tmpdir+ARGV[0]+".e"} 2>&1` 
+end
 if $? == 0
 	t =`md5sum #{fname} > #{@tmpdir+fname+".md5"}`
-		abort(`#{@tmpdir+ARGV[0]+".e"} #{ARGV[1]}`)
+	xfiles.each do |fnm|
+		if fnm!=""
+			`md5sum #{fnm} > #{@tmpdir+fnm+".md5"}`	
+		end
+	end
+	abort(`#{@tmpdir+ARGV[0]+".e"} #{ARGV[1]}`)
 else
 	puts "E#{errmsg}"
 end
