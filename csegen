@@ -10,6 +10,7 @@ headers = "
 #include <string>
 #include <map>
 #include <fstream>
+#include <cstdlib>
 using namespace std;
 
 
@@ -42,10 +43,33 @@ map<string,string> resolveKeys(char* KeyString) {
     KeyMap[Key] = Value;
     return KeyMap;
 }
+bool operator==(const string& lhs, const int& rhs)
+{
+	return atoi(lhs.c_str())==rhs;
+}
+bool operator!=(const string& lhs, const int& rhs)
+{
+	return atoi(lhs.c_str())!=rhs;
+}
+bool operator>=(const string& lhs, const int& rhs)
+{
+	return atoi(lhs.c_str())>=rhs;
+}
+bool operator<=(const string& lhs, const int& rhs)
+{
+	return atoi(lhs.c_str())<=rhs;
+}
+bool operator>(const string& lhs, const int& rhs)
+{
+	return atoi(lhs.c_str())>rhs;
+}
+bool operator<(const string& lhs, const int& rhs)
+{
+	return atoi(lhs.c_str())<rhs;
+}
 string execDir=\"#{File.dirname(ARGV[0])}\";
 "
 source = ""
-source +=headers+"\n"
 source += "int call(map<string,string> Request){"
 fname =  ARGV[0]
 if File.exists?(@tmpdir+fname+".md5")
@@ -116,7 +140,7 @@ int main(int argc, char**argv){
 }
 
 "
-
+source = headers + source
 f=openfile_p(ARGV[0]+".cpp","w")
 f.puts(source)
 f.close
@@ -127,3 +151,4 @@ if $? == 0
 else
 	puts "E#{errmsg}"
 end
+
