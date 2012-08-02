@@ -66,7 +66,9 @@ int old(char* filename)
 		inner[strlen(inner)-1]=0;
 		struct stat file_stat;
 		stat(filename,&file_stat);
-		if(file_stat.st_mtime==atoi(inner))
+		fprintf(stderr,"%s:%d %s:%d\n",tspath,atoi(inner),filename,file_stat.st_mtime);
+		fflush(stderr);
+		if(file_stat.st_mtime<=atoi(inner))
 		{
 			ol = 0;
 		}
