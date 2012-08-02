@@ -31,7 +31,7 @@ if gen
 #include <fstream>
 #include <cstdlib>
 using namespace std;
-string VERSION = \"0.5.0\";
+string VERSION = \"0.5.1\";
 
 map<string,string> resolveKeys(char* KeyString) {
 	int P = 0;
@@ -168,8 +168,14 @@ if gen
 	f.print "\n"
 	f.close
 end
+cfiles = []
+xfiles.each do |fn|
+	if !(fn[-2..-1]==".h" || fn[-4..-1] == ".hpp")
+		cfiles << fn
+	end
+end
 if gen
-	errmsg = `g++ -O2 #{@tmpdir+ARGV[0]+".cpp"} -I#{@tmpdir+wd} #{xfiles.join" "} -o #{@tmpdir+ARGV[0]+".e"} 2>&1` 
+	errmsg = `g++ -O2 #{@tmpdir+ARGV[0]+".cpp"} -I#{@tmpdir+wd} #{cfiles.join" "} -o #{@tmpdir+ARGV[0]+".e"} 2>&1` 
 end
 if $? == 0
 	`stat -c %Z #{ARGV[0]} > #{@tmpdir + ARGV[0]+".md5"}`
@@ -178,6 +184,7 @@ if $? == 0
 	end
 	puts `#{@tmpdir+ARGV[0]+".e"} #{ARGV[1]}`
 else
-	puts "E#{errmsg}"
+	puts "g++ -O2 #{@tmpdir+ARGV[0]+".cpp"} -I#{@tmpdir+wd} #{cfiles.join" "} -o #{@tmpdir+ARGV[0]+".e"} 2>&1"
+	puts "#{errmsg}"
 end
 
