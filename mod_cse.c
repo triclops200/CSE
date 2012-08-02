@@ -142,7 +142,7 @@ static int cse_handler(request_rec* r,const char** data){
 	{
 		if(r->args==NULL)
 		{
-			asprintf(&command,"csegen %s '\"\"' 2>&1",r->filename); 
+			asprintf(&command,"csegen %s 2>&1",r->filename); 
 		}else
 		{
 			asprintf(&command,"csegen %s '\"%s\"' 2>&1",r->filename,r->args); 
@@ -158,10 +158,10 @@ static int cse_handler(request_rec* r,const char** data){
 		t[len]=0;
 		if(r->args==NULL)
 		{
-			asprintf(&command,"%s '\"\"' 2>&1",t);
+			asprintf(&command,"%s 2>&1",t);
 		}else
 		{
-			asprintf(&command,"%s '\"%s\"' 2>&1",t,r->args);
+			asprintf(&command,"%s \"%s\" 2>&1",t,r->args);
 		}
 		free(t);
 
