@@ -1,90 +1,73 @@
 #!/usr/bin/env ruby 
 require "fileutils"
 @tmpdir = "/tmp/csedir"
+def old?(finame)
+	if File.exists?(@tmpdir+finame+".md5")
+		File.open(@tmpdir+finame+".md5") do |filehand|
+			v= filehand.read
+			vv= `stat -c %Z #{finame}`
+			return v != vv
+		end
+	else
+		FileUtils.mkdir_p(@tmpdir+File.dirname(finame))
+		return true
+	end
+end
 def openfile_p fname,mode
 	FileUtils.mkdir_p(@tmpdir+File.dirname(fname))
 	return File.open(@tmpdir+fname,mode)
 end
-headers = "
+gen = false
+if old?(ARGV[0])
+	gen = true
+end
+gen = true
+headers = ""
+if gen
+	headers = "
 #include <iostream>
 #include <string>
 #include <map>
 #include <fstream>
 #include <cstdlib>
 using namespace std;
-
+string VERSION = \"0.5.0\";
 
 map<string,string> resolveKeys(char* KeyString) {
-    int P = 0;
-    map<string,string> KeyMap;
-    string Key = \"\";
-    string Value = \"\";
-    bool Mode = 1; // 0 = key, 1 = value
-    while(KeyString[P]) {
-        switch(KeyString[P]) {
-        case '&':
-            KeyMap[Key] = Value;
-            Key = \"\";
-            Value = \"\";
-            Mode = 1;
-            break;
-        case '=':
-            Mode = 0;
-            break;
-        default:
-            if(Mode)
-                Key += KeyString[P];
-            else
-                Value += KeyString[P];
-        break;
-        }
-        P++;
-    }
-    KeyMap[Key] = Value;
-    return KeyMap;
-}
-bool operator==(const string& lhs, const int& rhs)
-{
-	return atoi(lhs.c_str())==rhs;
-}
-bool operator!=(const string& lhs, const int& rhs)
-{
-	return atoi(lhs.c_str())!=rhs;
-}
-bool operator>=(const string& lhs, const int& rhs)
-{
-	return atoi(lhs.c_str())>=rhs;
-}
-bool operator<=(const string& lhs, const int& rhs)
-{
-	return atoi(lhs.c_str())<=rhs;
-}
-bool operator>(const string& lhs, const int& rhs)
-{
-	return atoi(lhs.c_str())>rhs;
-}
-bool operator<(const string& lhs, const int& rhs)
-{
-	return atoi(lhs.c_str())<rhs;
+	int P = 0;
+	map<string,string> KeyMap;
+	string Key = \"\";
+	string Value = \"\";
+	bool Mode = 1; // 0 = key, 1 = value
+	while(KeyString[P]) {
+		switch(KeyString[P]) {
+		case '&':
+			KeyMap[Key] = Value;
+			Key = \"\";
+			Value = \"\";
+			Mode = 1;
+			break;
+		case '=':
+			Mode = 0;
+			break;
+		default:
+			if(Mode)
+				Key += KeyString[P];
+			else
+				Value += KeyString[P];
+		break;
+		}
+		P++;
+	}
+	KeyMap[Key] = Value;
+	return KeyMap;
 }
 string execDir=\"#{File.dirname(ARGV[0])}\";
-"
+	"
+end
 source = ""
 source += "int call(map<string,string> Request){"
 fname =  ARGV[0]
-def old?(finame)
-if File.exists?(@tmpdir+finame+".md5")
-	res = `md5sum -c #{@tmpdir+finame+".md5"} 2> /dev/null`
-	res = res.split(": ")[1]
-	if res.strip=="OK"
-		return false
-	end
-	return true
-else
-	FileUtils.mkdir_p(@tmpdir+File.dirname(finame))
-	return true
-end
-end
 contents = File.open(fname,"rb").read
 sections = contents.split("<%");
 msections = []
@@ -116,13 +99,13 @@ msections.each do
 	begin
 		if i == -1
 			val = ""
-			if cppsections[c][0]=='='
+			if cppsections[c][0]=='=' && gen
 				val = "cout<<"+cppsections[c][1..-1]+";\n"
 			elsif cppsections[c][0]=='@'
-				 cppsections[c][1..-1].strip.gsub(" ","").gsub("\n","").gsub("	","").split(",").each do |tem|
-				 	xfiles << tem
-				 end
-			else
+				cppsections[c][1..-1].strip.gsub(" ","").gsub("\n","").gsub("	","").split(",").each do |tem|
+					xfiles << tem
+				end
+			elsif gen
 				val = cppsections[c]
 			end
 			source += val
@@ -138,8 +121,8 @@ msections.each do
 	end
 	i *= -1
 end	
-
-source += "}
+if gen
+	source += "}
 
 int main(int argc, char**argv){
 	if(argc==2)
@@ -148,7 +131,8 @@ int main(int argc, char**argv){
 	call(resolveKeys(\"\"));
 }
 
-"
+	"
+end
 uheaders = "//user includes\n" 
 xfiles.uniq!
 if xfiles!= [] 
@@ -161,36 +145,38 @@ end
 uheaders += "//end user includes \n\n"
 headers = uheaders + headers
 source = headers + source
-f=openfile_p(ARGV[0]+".cpp","w")
-f.puts(source)
-f.close
 wd = (File.dirname(ARGV[0]));
 if xfiles != []
-FileUtils.cd(wd)
-FileUtils.cp(xfiles,@tmpdir+wd)
-end
-gen = false
-if old?(ARGV[0])
-	gen = true
+	FileUtils.cd(wd)
+	FileUtils.cp(xfiles,@tmpdir+wd)
 end
 xfiles.each do |fnm|
 	if fnm!=""
-		if old?(fnm)
+		if old?(wd + "/"+fnm)
 			gen=true
 		end
 	end
 end
 if gen
+	f=openfile_p(ARGV[0]+".cpp","w")
+	f.puts(source)
+	f.close
+	f=openfile_p(ARGV[0]+".dep","w")
+	xfiles.each do |fnm|
+		f.print(wd+"/"+fnm+",")
+	end
+	f.print "\n"
+	f.close
+end
+if gen
 	errmsg = `g++ -O2 #{@tmpdir+ARGV[0]+".cpp"} -I#{@tmpdir+wd} #{xfiles.join" "} -o #{@tmpdir+ARGV[0]+".e"} 2>&1` 
 end
 if $? == 0
-	t =`md5sum #{fname} > #{@tmpdir+fname+".md5"}`
-	xfiles.each do |fnm|
-		if fnm!=""
-			`md5sum #{fnm} > #{@tmpdir+fnm+".md5"}`	
-		end
+	`stat -c %Z #{ARGV[0]} > #{@tmpdir + ARGV[0]+".md5"}`
+	xfiles.each do |tfn|
+		`stat -c %Z #{wd+"/"+tfn} > #{@tmpdir + wd +"/"+ tfn+".md5"}`
 	end
-	abort(`#{@tmpdir+ARGV[0]+".e"} #{ARGV[1]}`)
+	puts `#{@tmpdir+ARGV[0]+".e"} #{ARGV[1]}`
 else
 	puts "E#{errmsg}"
 end
