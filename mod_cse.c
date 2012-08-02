@@ -12,6 +12,7 @@
 #include "apr_strings.h"
 #define COMPDIR "/tmp/csedir"
 int generate = 0;
+#define DEBUG 0
 char* read_entire_file(FILE* cmd)
 {
 	char * str;
@@ -44,7 +45,7 @@ int file_exists(char * filename)
 {
 	FILE * file;
 	file = fopen(filename,"r");
-		if(file)
+	if(file)
 	{
 		fclose(file);
 		return 1;
@@ -66,8 +67,10 @@ int old(char* filename)
 		inner[strlen(inner)-1]=0;
 		struct stat file_stat;
 		stat(filename,&file_stat);
-		fprintf(stderr,"%s:%d %s:%d\n",tspath,atoi(inner),filename,file_stat.st_mtime);
-		fflush(stderr);
+		if(DEBUG){
+			fprintf(stderr,"%s:%d %s:%d\n",tspath,atoi(inner),filename,file_stat.st_mtime);
+			fflush(stderr);
+		}
 		if(file_stat.st_mtime<=atoi(inner))
 		{
 			ol = 0;
