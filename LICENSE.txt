@@ -1,0 +1,5 @@
+All pieces of code in this project are released under gpl which is specified
+at http://www.gnu.org/licenses/lgpl.txt or in lgpl.txt which is included
+with this project. The websites built to use CSE do not have to use lgpl, but
+cse must be linked to on the site. You may contact me at
+starfoxprime@gmail.com for questions.
