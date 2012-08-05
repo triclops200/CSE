@@ -1,5 +1,9 @@
-All pieces of code in this project are released under gpl which is specified
+All pieces of code in this project are released under GNU Lesser General
+Public License which is specified
 at http://www.gnu.org/licenses/lgpl.txt or in lgpl.txt which is included
 with this project. The websites built to use CSE do not have to use lgpl, but
-cse must be linked to on the site. You may contact me at
+cse must be linked to on the site. Furthermore, you must send an email to
+starfoxprime@gmail.com before making public any site this software, but, you do not need my
+permission, I would just like to see where it is being used, so, if I do not
+respond, you may still use it. You may contact me at
 starfoxprime@gmail.com for questions.
